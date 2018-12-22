@@ -14,19 +14,36 @@ data Term =
 
 type Rule = [Term]
 
+type Substitution = [(Term, Term)]
+true = []
+
 -------- SHOW --------
 
 instance Show Term where show = showTerm
+--instance Show Substitution where show = showSub
 
 showTerm :: Term -> String
 showTerm (Atom x) = x
-showTerm (Var x) = "?" ++ x
+showTerm (Var x) = x
 showTerm (Term x ts) = intercalate " " $ ["(", x] ++ (map show ts) ++ [")"]
 
--------- UNIFICATION --------
+showSub :: Substitution -> String
+showSub [] = "true"
+showSub subs =
+    (intercalate ", " $ map (\(v, t) -> show v ++ " = " ++ show t) subs) ++ "."
 
-type Substitution = [(Term, Term)]
-true = []
+squashSub :: Substitution -> Substitution
+squashSub = rmTemp . squash
+    where rmTemp = filter (\(Var n, _) -> not ('~' `elem` n))
+
+squash [] = []
+squash sub@(_:[]) = sub
+squash (s@(l,r):ss) = case filter (\(l',r') -> l' == r) ss of
+    [] -> s:(squash ss)
+    otherwise ->
+        squash $ map (\s'@(l',r') -> if l' == r then (l,r') else s') ss
+
+-------- UNIFICATION --------
 
 apply :: Substitution -> [Term] -> [Term]
 --apply sub terms | trace ("a: sub = " ++ show sub ++ " terms = " ++ show terms) False = undefined
@@ -89,6 +106,3 @@ rename knowledge i = map (ren i) knowledge
             Just n -> Var $ (take (n+1) name) ++ show i
         r i (Term name ts) = Term name $ map (r i) ts
         r i t = t
-
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"

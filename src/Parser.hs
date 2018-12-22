@@ -59,6 +59,12 @@ parseProg = do
     eof
     return rules
 
+parseGoals :: Parser [Term]
+parseGoals = do
+    goals <- parseTerm `sepBy1` comma
+    char '.'
+    return goals
+
 comma :: Parser ()
 comma = char ',' >> optSpaces
 
